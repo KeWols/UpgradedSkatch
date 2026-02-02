@@ -12,7 +12,8 @@ const LoginPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post("http://localhost:3000/users/login", formData);
+      const response = await axios.post("/users/login", formData);
+
       console.log("Login response:", response.data);
 
       // Eltároljuk az infókat

@@ -6,7 +6,7 @@ const LandingPage = () => {
     <div>
       <h1>Landing Page</h1>
       <p>
-        <Link to="/login">Login</Link> | <Link to="/register">Register</Link>
+        <Link to="/login">Login</Link> | <Link to="/registration">Register</Link>
       </p>
     </div>
   );

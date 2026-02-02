@@ -10,10 +10,8 @@ const RegistrationPage = () => {
   const handleRegistration = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://localhost:3000/users/register', {
-        username,
-        password
-      });
+      
+      const response = await axios.post("/users/register", {username, password});
 
       alert(response.data.message);
       // Sikeres regisztráció után átirányítás:

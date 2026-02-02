@@ -2,13 +2,15 @@ const amqp = require("amqplib");
 
 let channel, connection;
 
-// ✅ RabbitMQ kapcsolat inicializálása
-async function connectBroker() {
-  // Ha már létezik egy kapcsolat, ne hozzunk létre újat
-  if (channel) return channel;
+
+async function connectBroker(){
+
+  if (channel){
+    return channel;
+  } 
 
   try {
-    // Kapcsolódunk a RabbitMQ szerverhez
+    
     connection = await amqp.connect("amqp://localhost");
     channel = await connection.createChannel();
 
