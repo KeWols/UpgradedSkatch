@@ -1,160 +1,139 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
-const ICE_SERVERS = {
-  iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
-};
+const ICE_SERVERS = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
 
 const VoiceChat = ({ socket, roomId, playerName, playerCount }) => {
-  const [peerConnection, setPeerConnection] = useState(null);
-  const [localStream, setLocalStream] = useState(null);
-  const [connected, setConnected] = useState(false);
+  const pcRef = useRef(null);
+  const localStreamRef = useRef(null);
   const audioRef = useRef(null);
-  const peerRef = useRef(null);
+  const startedRef = useRef(false);
 
-  const analyserRef = useRef(null);
-  const audioContextRef = useRef(null);
-
-  function stopVoiceChat() {
-    if (peerRef.current) {
-      peerRef.current.close();
-      peerRef.current = null;
-    }
-    if (localStream) {
-      localStream.getTracks().forEach((track) => track.stop());
-      setLocalStream(null);
-    }
-    setConnected(false);
-    console.log("🔻 VoiceChat kapcsolat lezárva.");
-    if (audioContextRef.current) {
-      audioContextRef.current.close();
-      audioContextRef.current = null;
-    }
-  }
+  const [connected, setConnected] = useState(false);
 
   useEffect(() => {
-    // Alapfeltételek
-    if (!socket || !roomId || !playerName) {
-      console.error("❌ VoiceChat: nincs socket, roomId vagy playerName.");
-      stopVoiceChat();
-      return;
-    }
-    if (playerCount !== 2) {
-      console.warn("❌ VoiceChat: A kapcsolódáshoz pontosan 2 játékos szükséges.");
-      stopVoiceChat();
-      return;
-    }
+    if (!socket || !socket.connected || !roomId || !playerName) return;
+    if (playerCount !== 2) return;
 
-    console.log(`⚡ VoiceChat start: ${roomId} ${playerName}`);
+    if (startedRef.current) return;
+    startedRef.current = true;
 
-    async function startVoiceChat() {
+    let closed = false;
+
+    const stop = () => {
+      const pc = pcRef.current;
+      pcRef.current = null;
+
+      if (pc) {
+        try { pc.onicecandidate = null; pc.ontrack = null; pc.close(); } catch {}
+      }
+
+      const ls = localStreamRef.current;
+      localStreamRef.current = null;
+      if (ls) {
+        try { ls.getTracks().forEach((t) => t.stop()); } catch {}
+      }
+
+      setConnected(false);
+      startedRef.current = false;
+    };
+
+    const onIceCandidate = async (data) => {
+      const pc = pcRef.current;
+      if (!pc || !data?.candidate) return;
       try {
-        if (peerRef.current && peerRef.current.connectionState !== "closed") {
-          console.warn("🔄 Már van egy aktív PeerConnection.");
-          return;
+        await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+      } catch {}
+    };
+
+    const onOffer = async (data) => {
+      const pc = pcRef.current;
+      if (!pc || !data?.offer) return;
+
+      await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      socket.emit("answer", { roomId, answer });
+    };
+
+    const onAnswer = async (data) => {
+      const pc = pcRef.current;
+      if (!pc || !data?.answer) return;
+      await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+    };
+
+    const onWebrtcReady = async ({ initiatorId }) => {
+      const pc = pcRef.current;
+      if (!pc) return;
+
+      if (socket.id !== initiatorId) return;
+      if (pc.signalingState !== "stable") return;
+
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      socket.emit("offer", { roomId, offer });
+    };
+
+    const start = async () => {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      if (closed) {
+        stream.getTracks().forEach((t) => t.stop());
+        return;
+      }
+      localStreamRef.current = stream;
+
+      const pc = new RTCPeerConnection(ICE_SERVERS);
+      pcRef.current = pc;
+
+      stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+
+      pc.onicecandidate = (event) => {
+        if (event.candidate) {
+          socket.emit("ice_candidate", { roomId, candidate: event.candidate });
         }
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });// mikrofon hasznalat hozzaferes
-        setLocalStream(stream);
+      };
 
-        const pc = new RTCPeerConnection(ICE_SERVERS); //Létrehoz egy új PeerConnection objektumot, amely a WebRTC kapcsolatot kezel
+      pc.ontrack = (event) => {
 
-        stream.getTracks().forEach((track) => pc.addTrack(track, stream));
-        setPeerConnection(pc);
-        peerRef.current = pc;
+        console.log("ontrack", event.streams[0]?.getAudioTracks()?.[0]);
 
-        console.log("✅ WebRTC kapcsolat létrejött!");
+        if (audioRef.current) {
+          audioRef.current.srcObject = event.streams[0];
+          audioRef.current.play().catch(() => {});
+        }
+      };
 
-        pc.onicecandidate = (event) => {
-          if (event.candidate) {
-            console.log("🟢 ICE candidate küldése:", event.candidate);
-            socket.emit("ice_candidate", { roomId, candidate: event.candidate });
-          }
-        };
+      pc.onconnectionstatechange = () => {
+        if (pc.connectionState === "connected") setConnected(true);
+        if (pc.connectionState === "failed" || pc.connectionState === "closed") setConnected(false);
+      };
 
-        pc.ontrack = (event) => { //másik féltől érkező hang fogadása és lejátszása
-          console.log("📡 Távoli hang érkezett:", event.streams);
-          if (audioRef.current) {
-            audioRef.current.srcObject = event.streams[0];
-            audioRef.current.play().catch((err) => {
-              console.error("🔇 Hiba a remoteAudio lejátszásakor:", err);
-            });
+      socket.on("ice_candidate", onIceCandidate);
+      socket.on("offer", onOffer);
+      socket.on("answer", onAnswer);
+      socket.on("webrtc_ready", onWebrtcReady);
 
-            // Dátum: beépítünk egy Analyser-t a fogadott streamre
-            setupRemoteAnalyser(event.streams[0]);
-          }
-        };
+      socket.emit("join_voice_chat", { roomId, playerName });
+    };
 
-        socket.on("ice_candidate", (data) => {
-          if (data.candidate) {
-            console.log("🔵 ICE candidate fogadva:", data.candidate);
-            pc.addIceCandidate(new RTCIceCandidate(data.candidate));
-          }
-        });
-
-        socket.emit("join_voice_chat", { roomId, playerName });
-
-        socket.on("offer", async (data) => {
-          console.log("📩 Offer érkezett:", data);
-          await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
-          const answer = await pc.createAnswer();
-          await pc.setLocalDescription(answer);
-          socket.emit("answer", { roomId, answer });
-        });
-
-        socket.on("answer", async (data) => {
-          console.log("📩 Answer érkezett:", data);
-          await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
-        });
-
-        setConnected(true);
-      } catch (error) {
-        console.error("🚨 getUserMedia hiba", error);
-        stopVoiceChat();
-      }
-    }
-
-    function setupRemoteAnalyser(remoteStream) {
-
-      audioContextRef.current = new AudioContext();
-      const audioContext = audioContextRef.current;
-
-      const source = audioContext.createMediaStreamSource(remoteStream);
-      const analyser = audioContext.createAnalyser();
-      analyser.fftSize = 512;
-      analyser.smoothingTimeConstant = 0.8;
-      source.connect(analyser);
-      analyserRef.current = analyser;
-
-      measureVolume();
-    }
-
-    function measureVolume() {
-      if (!analyserRef.current) return;
-      const analyser = analyserRef.current;
-
-      const dataArray = new Uint8Array(analyser.frequencyBinCount);
-      analyser.getByteFrequencyData(dataArray);
-      const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
-
-      // Például 17-es threshold
-      if (average > 17) {
-        console.log(`You received a voice wave bigger than 17 dB (avg = ${average.toFixed(2)})`);
-      }
-
-      requestAnimationFrame(measureVolume);
-    }
-
-    startVoiceChat();
+    start().catch(() => stop());
 
     return () => {
-      stopVoiceChat();
+      closed = true;
+
+      socket.off("ice_candidate", onIceCandidate);
+      socket.off("offer", onOffer);
+      socket.off("answer", onAnswer);
+      socket.off("webrtc_ready", onWebrtcReady);
+
+      stop();
     };
   }, [socket, roomId, playerName, playerCount]);
 
   return (
-    <div style={{ marginTop: "20px", border: "1px solid white", padding: "10px" }}>
+    <div style={{ marginTop: 20, border: "1px solid white", padding: 10 }}>
       <h3>Voice Chat</h3>
-      {connected ? <p>🔊 Kapcsolat aktív</p> : <p>❌ Kapcsolat inaktív</p>}
-      <audio id="remote-audio" ref={audioRef} autoPlay />
+      <p>{connected ? "Connected" : "Not connected"}</p>
+      <audio ref={audioRef} autoPlay playsInline controls />
     </div>
   );
 };

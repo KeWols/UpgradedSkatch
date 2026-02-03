@@ -197,7 +197,7 @@ const IngamePage = () => {
         />
       )}
 
-      <MicTest />
+      {/*<MicTest />*/}
     </div>
   );
 };

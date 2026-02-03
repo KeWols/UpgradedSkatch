@@ -3,7 +3,14 @@ import { io } from "socket.io-client";
 let socket = null;
 
 export function connectWebSocket(roomId, playerName) {
-  if (socket && socket.connected) {
+  if (socket) {
+    if (socket.connected) {
+      socket.emit("join_room", { roomId, playerName });
+    } else {
+      socket.once("connect", () => {
+        socket.emit("join_room", { roomId, playerName });
+      });
+    }
     return socket;
   }
 
@@ -18,19 +25,9 @@ export function connectWebSocket(roomId, playerName) {
     socket.emit("join_room", { roomId, playerName });
   });
 
-  /*
-  socket.on("disconnect", (reason) => {
-    console.log(`WebS kapcsolat megszakadt hiba(debug): ${reason}`);
-  });
-
-  socket.on("connect_error", (error) => {
-    console.log("WebS hiba (debug):", error);
-  });
-
-  */
-
   return socket;
 }
+
 
 export function getSocket() {
   return socket;

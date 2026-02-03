@@ -45,6 +45,8 @@ connectBroker().catch((err) => {
 
 const socketToUser = {};
 
+const voiceMembers = new Map();
+
 function createStringDeck() {
   const deck = [
     "2H","3H","4H","5H","6H","7H","8H","9H","10H","JH","QH","KH","AH",
@@ -140,8 +142,19 @@ io.on("connection", (socket) => {
   });
 
   socket.on("join_voice_chat", ({ roomId, playerName }) => {
+    
     socket.join(roomId);
-    console.log("Voice chat join:", playerName, roomId);
+
+    const members = voiceMembers.get(roomId) || [];
+
+    if (!members.includes(socket.id)) members.push(socket.id);
+    voiceMembers.set(roomId, members);
+
+    console.log("Csatlakozas a voice chathez:", playerName, roomId);
+
+    if (members.length === 2) {
+      io.to(roomId).emit("webrtc_ready", { roomId, initiatorId: members[0] });
+    }
   });
 
   socket.on("ice_candidate", ({ roomId, candidate }) => {
@@ -236,9 +249,19 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     const userData = socketToUser[socket.id];
-    if (!userData) return;
+    if (!userData){
+      return;
+    }
+
+    for (const [rid, members] of voiceMembers.entries()) {
+      const next = members.filter((id) => id !== socket.id);
+      
+      if (next.length === 0) voiceMembers.delete(rid);
+      else voiceMembers.set(rid, next);
+    }
 
     const { roomId, playerName } = userData;
+    
     if (rooms[roomId]) {
       rooms[roomId].players = rooms[roomId].players.filter((p) => p !== playerName);
       io.to(roomId).emit("userLeft", {
