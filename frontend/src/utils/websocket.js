@@ -75,8 +75,26 @@ export function sendNextTurn(roomId, nextPlayer) {
   s.emit("nextTurn", { roomId, nextPlayer });
 }
 
-export function sendDrawCard(roomId, nthCardInDeck, playerName) {
+/*export function sendDrawCard(roomId, nthCardInDeck, playerName) {
   const s = getSocket();
   if (!s || !s.connected) return;
   s.emit("drawCard", { roomId, nthCardInDeck, playerName });
+}*/
+
+export function sendDrawCard(roomId, playerName) {
+  const s = getSocket();
+  if (!s || !s.connected) return;
+  s.emit("drawCard", { roomId, playerName });
+}
+
+export function sendDiscardDrawnCard(roomId) {
+  const s = getSocket();
+  if (!s || !s.connected) return;
+  s.emit("discardDrawnCard", { roomId });
+}
+
+export function sendSwapDrawnWithHand(roomId, handIndex) {
+  const s = getSocket();
+  if (!s || !s.connected) return;
+  s.emit("swapDrawnWithHand", { roomId, handIndex });
 }

@@ -63,36 +63,47 @@ function startGame(roomId) {
   const gameRoomId = `game_${roomId}`;
   const deck = createStringDeck();
 
+  const players = [...rooms[roomId].players];
+  const CARDS_PER_PLAYER = 6;
+
   rooms[gameRoomId] = {
-    players: [...rooms[roomId].players],
+    players,
     deck,
     hands: {},
-    turnIndex: 0,
     discardPile: [],
-    nthCardInDeck: deck.length - 1,
+    dealerIndex: 0,
+    turnIndex: 0,
   };
 
-  rooms[gameRoomId].players.forEach((player) => {
-    rooms[gameRoomId].hands[player] = rooms[gameRoomId].deck.splice(0, 4);
-  });
+  for (const p of players) {
+    rooms[gameRoomId].hands[p] = rooms[gameRoomId].deck.splice(0, CARDS_PER_PLAYER);
+  }
 
-  rooms[gameRoomId].turnIndex = Math.floor(
-    Math.random() * rooms[gameRoomId].players.length
-  );
+  const dealerIndex = Math.floor(Math.random() * players.length);
+  const turnIndex = (dealerIndex + 1) % players.length;
 
-  rooms[gameRoomId].nthCardInDeck = rooms[gameRoomId].deck.length - 1;
+  rooms[gameRoomId].dealerIndex = dealerIndex;
+  rooms[gameRoomId].turnIndex = turnIndex;
+
+  rooms[gameRoomId].currentTurn = players[turnIndex];
+  rooms[gameRoomId].pendingDraw = {};
+
 
   io.to(roomId).emit("gameStarted", {
     gameRoomId,
-    players: rooms[gameRoomId].players,
-    hands: rooms[gameRoomId].hands,
-    turnIndex: rooms[gameRoomId].turnIndex,
+    players,
+    dealerIndex,
+    turnIndex,
+    currentTurn: rooms[gameRoomId].currentTurn,
     deckSize: rooms[gameRoomId].deck.length,
     discardPile: rooms[gameRoomId].discardPile,
+    cardsPerPlayer: CARDS_PER_PLAYER,
   });
+
 
   console.log("Game started:", gameRoomId);
 }
+
 
 io.on("connection", (socket) => {
   console.log("WebSocket connected:", socket.id);
@@ -187,23 +198,96 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("drawCard", ({ roomId, nthCardInDeck, playerName }) => {
+  socket.on("drawCard", ({ roomId, playerName }) => {
     const room = rooms[roomId];
     if (!room || !Array.isArray(room.deck) || room.deck.length === 0) return;
 
-    const idx = Number(nthCardInDeck);
-    if (!Number.isFinite(idx) || idx < 0 || idx >= room.deck.length) return;
+    if (room.currentTurn && room.currentTurn !== playerName) return;
 
-    const drawnCard = room.deck[idx];
+    if (!room.pendingDraw) room.pendingDraw = {};
+    if (room.pendingDraw[playerName]) return;
 
-    socket.emit("cardDrawn", { card: drawnCard, nthCardInDeck: idx });
+    const card = room.deck.pop();
+    room.pendingDraw[playerName] = card;
 
-    room.nthCardInDeck = idx - 1;
+    socket.emit("cardDrawn", { card });
 
-    io.to(roomId).emit("updateGameState", room);
+    io.to(roomId).emit("deckSizeUpdate", { deckSize: room.deck.length });
+    io.to(roomId).emit("playerDrewCard", { playerName });
 
-    publishDrawCard(roomId, idx, playerName);
+    publishDrawCard(roomId, room.deck.length, playerName);
   });
+
+  socket.on("discardDrawnCard", ({ roomId }) => {
+    const userData = socketToUser[socket.id];
+    if (!userData) return;
+
+    const room = rooms[roomId];
+    if (!room || !room.pendingDraw) return;
+
+    const player = userData.playerName;
+    if (room.currentTurn && room.currentTurn !== player) return;
+
+    const drawn = room.pendingDraw[player];
+    if (!drawn) return;
+
+    room.discardPile.push(drawn);
+    room.pendingDraw[player] = null;
+
+    io.to(roomId).emit("discardTopUpdate", { card: drawn });
+    io.to(roomId).emit("deckSizeUpdate", { deckSize: room.deck.length });
+
+    socket.emit("clearDrawnCard");
+
+    const idx = room.players.indexOf(room.currentTurn);
+    const next = room.players[(idx + 1) % room.players.length];
+    room.currentTurn = next;
+    if (room.pendingDraw) room.pendingDraw[next] = null;
+
+    io.to(roomId).emit("nextTurnUpdate", { roomId, nextPlayer: next });
+    publishNextTurn(roomId, next);
+  });
+
+  socket.on("swapDrawnWithHand", ({ roomId, handIndex }) => {
+    const userData = socketToUser[socket.id];
+    if (!userData) return;
+
+    const room = rooms[roomId];
+    if (!room || !room.pendingDraw || !room.hands) return;
+
+    const player = userData.playerName;
+    if (room.currentTurn && room.currentTurn !== player) return;
+
+    const drawn = room.pendingDraw[player];
+    if (!drawn) return;
+
+    const idx = Number(handIndex);
+    if (!Number.isInteger(idx)) return;
+
+    const hand = room.hands[player];
+    if (!Array.isArray(hand) || idx < 0 || idx >= hand.length) return;
+
+    const oldCard = hand[idx];
+    hand[idx] = drawn;
+
+    room.discardPile.push(oldCard);
+    room.pendingDraw[player] = null;
+
+    io.to(roomId).emit("discardTopUpdate", { card: oldCard });
+    io.to(roomId).emit("deckSizeUpdate", { deckSize: room.deck.length });
+
+    socket.emit("clearDrawnCard");
+    socket.emit("handCardReset", { cardContainerID: `${player}-${idx}` });
+
+    const t = room.players.indexOf(room.currentTurn);
+    const next = room.players[(t + 1) % room.players.length];
+    room.currentTurn = next;
+    if (room.pendingDraw) room.pendingDraw[next] = null;
+
+    io.to(roomId).emit("nextTurnUpdate", { roomId, nextPlayer: next });
+    publishNextTurn(roomId, next);
+  });
+
 
   socket.on("discardCard", ({ roomId, playerName, card }) => {
     const room = rooms[roomId];
@@ -220,6 +304,12 @@ io.on("connection", (socket) => {
     if (!room || !Array.isArray(room.players) || room.players.length === 0) return;
 
     room.turnIndex = (room.turnIndex + 1) % room.players.length;
+    room.currentTurn = room.players[room.turnIndex];
+
+    if (room.pendingDraw){
+      room.pendingDraw[room.currentTurn] = null;
+    } 
+
     io.to(roomId).emit("updateGameState", room);
   });
 
@@ -234,8 +324,26 @@ io.on("connection", (socket) => {
   socket.on("card_to_reveal", ({ roomId, cardContainerID }) => {
     const userData = socketToUser[socket.id];
     if (!userData) return;
+
+    const room = rooms[roomId];
+    if (room && room.hands && typeof cardContainerID === "string") {
+      const dash = cardContainerID.lastIndexOf("-");
+      if (dash > 0) {
+        const owner = cardContainerID.slice(0, dash);
+        const idx = Number(cardContainerID.slice(dash + 1));
+
+        if (owner === userData.playerName && Number.isInteger(idx)) {
+          const card = room.hands[owner]?.[idx];
+          if (card) {
+            socket.emit("revealCard", { cardContainerID, card });
+          }
+        }
+      }
+    }
+
     publishCardToReveal(roomId, cardContainerID, userData.playerName);
   });
+
 
   socket.on("card_to_hide", ({ roomId, cardContainerID }) => {
     const userData = socketToUser[socket.id];
@@ -244,8 +352,14 @@ io.on("connection", (socket) => {
   });
 
   socket.on("nextTurn", ({ roomId, nextPlayer }) => {
+    const room = rooms[roomId];
+    if (room) {
+      room.currentTurn = nextPlayer;
+      if (room.pendingDraw) room.pendingDraw[nextPlayer] = null;
+    }
     publishNextTurn(roomId, nextPlayer);
   });
+
 
   socket.on("disconnect", () => {
     const userData = socketToUser[socket.id];

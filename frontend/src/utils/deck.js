@@ -1,39 +1,34 @@
-const suits = ["clubs", "diamonds", "hearts", "spades"];
-const cardNames = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "j", "q", "k", "a"];
+const images = require.context("../assets", false, /\.png$/);
 
-// Kártyákhoz tartozó értékek
-const cardValues = {
-  "2": 2, "3": 3, "4": 4, "5": 5, "6": 6, "7": 7, "8": 8, "9": 9, "10": 10,
-  "j": 11, "q": 12, "k": 13, "a": 1
+const suitMap = {
+  S: "spades",
+  H: "hearts",
+  D: "diamonds",
+  C: "clubs",
 };
 
-// Pakli létrehozása az összes kártyával
-function createDeck() {
-  let deck = [];
-  for (let suit of suits) {
-    for (let name of cardNames) {
-      deck.push({ name, value: cardValues[name], suit });
-    }
-  }
-  return deck;
-}
+const rankMap = {
+  A: "a",
+  K: "k",
+  Q: "q",
+  J: "j",
+};
 
-function shuffleDeck(deck) {
-  for (let i = deck.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [deck[i], deck[j]] = [deck[j], deck[i]];
-  }
-  return deck;
-}
+export function getCardImage(cardCode) {
+  if (!cardCode || typeof cardCode !== "string") return null;
 
-function getCardImage(card) {
+  const suitLetter = cardCode.slice(-1);
+  const rankRaw = cardCode.slice(0, -1);
 
-  if (!card){
+  const suit = suitMap[suitLetter];
+  if (!suit) return null;
+
+  const rank = rankMap[rankRaw] || rankRaw.toLowerCase();
+  const filename = `./${rank}_of_${suit}.png`;
+
+  try {
+    return images(filename);
+  } catch {
     return null;
   }
-  
-  return `../assets/${card.name}_of_${card.suit}.png`;
 }
-
-module.exports = { createDeck, shuffleDeck, getCardImage };
-//module.exports = { createDeck, shuffleDeck };
