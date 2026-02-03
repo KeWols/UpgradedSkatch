@@ -532,13 +532,21 @@ io.on("connection", (socket) => {
     }
 
     const { roomId, playerName } = userData;
-    
+
     if (rooms[roomId]) {
+      
       rooms[roomId].players = rooms[roomId].players.filter((p) => p !== playerName);
-      io.to(roomId).emit("userLeft", {
-        roomId,
-        players: rooms[roomId].players,
-      });
+      
+      if (rooms[roomId].players.length === 0) {
+
+        delete rooms[roomId];
+
+      } else {
+        io.to(roomId).emit("userLeft", {
+          roomId,
+          players: rooms[roomId].players,
+        });
+      }
     }
 
     delete socketToUser[socket.id];

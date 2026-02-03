@@ -44,3 +44,27 @@ export async function createSession(username, password) {
   });
   return response.json();
 }
+
+export async function deleteRoom(roomId) {
+  const response = await fetch(`${API_BASE}/rooms/${roomId}`, {
+    method: "DELETE",
+  });
+  return response.json();
+}
+
+export async function updatePassword(username, newPassword) {
+  const response = await fetch(`${API_BASE}/users/${username}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ newPassword }),
+  });
+  return response.json();
+}
+
+export async function deleteUser(username) {
+  const response = await fetch(`${API_BASE}/users/${username}`, {
+    method: "DELETE",
+  });
+  return response.json();
+}
+

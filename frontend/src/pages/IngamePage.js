@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { connectWebSocket, disconnectWebSocket } from "../utils/websocket";
 import { joinRoom } from "../utils/api";
+import { deleteUser } from "../utils/api";
 import Chat from "../components/Chat";
 import VoiceChat from "../components/VoiceChat";
 
@@ -183,6 +184,23 @@ const IngamePage = () => {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    if (!window.confirm("Biztosan törölni szeretnéd a fiókodat?")) return;
+
+    try {
+      const response = await deleteUser(playerName);
+      if (response.message) {
+        alert(response.message);
+        handleLogout();
+      } else {
+        alert("Hiba a fiók törlésekor: " + (response.error || "Ismeretlen hiba"));
+      }
+    } catch (error) {
+      console.error("Fiók törlési hiba:", error);
+      alert("Fiók törlési hiba");
+    }
+  };
+
   const playerCount = players.length;
 
   return (
@@ -266,6 +284,8 @@ const IngamePage = () => {
           </div>
         )}
       </div>
+
+      <button onClick={handleDeleteAccount} style={{ marginTop: "10px", backgroundColor: "red", color: "white" }}> Fiók törlése </button>
 
     </div>
   );

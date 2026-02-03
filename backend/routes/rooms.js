@@ -52,4 +52,17 @@ router.post("/:roomId/players", (req, res) => {
   });
 });
 
+router.delete("/:roomId", (req, res) => {
+  const { roomId } = req.params;
+
+  // Törlés a memóriából (roomsData.js-ből jön a rooms referencia)
+  if (rooms[roomId]) {
+    delete rooms[roomId];
+    console.log(`🗑️ Szoba törölve: ${roomId}`);
+    return res.status(200).json({ message: "Szoba sikeresen törölve" });
+  } else {
+    return res.status(404).json({ error: "A szoba nem található" });
+  }
+});
+
 module.exports = router;
