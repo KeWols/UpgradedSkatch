@@ -1,27 +1,41 @@
-// backend/routes/rooms.js
+// backend/routes/rooms.js – RESTful room resources
 
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const rooms = require('../roomsData.js');
+const rooms = require("../roomsData.js");
 
 function generateRoomCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-// Szoba létrehozása KÜLÖN - ha valaki explicit "Create Room" gombra kattint
-router.post("/create-room", (req, res) => {
+// POST /api/rooms – create a new room
+router.post("/", (req, res) => {
   const roomId = generateRoomCode();
   rooms[roomId] = { players: [], status: "waiting" };
   console.log(`✅ Új szoba létrehozva: ${roomId}`);
-  return res.json({ roomId });
+  return res.status(201).json({ roomId });
 });
 
-// Szobához csatlakozás
-router.post("/join-room", (req, res) => {
-  const { roomId, playerName } = req.body;
-  
-  if (!roomId || !playerName) {
-    return res.status(400).json({ error: "Hibás adatok" });
+// GET /api/rooms/:roomId – get room state
+router.get("/:roomId", (req, res) => {
+  const { roomId } = req.params;
+  if (!rooms[roomId]) {
+    return res.status(404).json({ error: "Szoba nem létezik" });
+  }
+  return res.json({
+    roomId,
+    players: rooms[roomId].players,
+    status: rooms[roomId].status,
+  });
+});
+
+// POST /api/rooms/:roomId/players – add a player to the room (join)
+router.post("/:roomId/players", (req, res) => {
+  const { roomId } = req.params;
+  const { playerName } = req.body;
+
+  if (!playerName) {
+    return res.status(400).json({ error: "playerName is required" });
   }
   if (!rooms[roomId]) {
     return res.status(404).json({ error: "Szoba nem létezik" });
@@ -31,11 +45,10 @@ router.post("/join-room", (req, res) => {
   }
   console.log(`${playerName} csatlakozott a(z) ${roomId} szobához`);
 
-  // Itt adjunk vissza a players tömböt is
-  return res.json({
+  return res.status(200).json({
     message: "Csatlakozás sikeres",
     roomId,
-    players: rooms[roomId].players  // <<--- EZ A LÉNYEG
+    players: rooms[roomId].players,
   });
 });
 

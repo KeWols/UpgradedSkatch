@@ -8,6 +8,11 @@ const cors = require("cors");
 const rooms = require("./roomsData.js");
 const userRoutes = require("./routes/users");
 const roomRoutes = require("./routes/rooms");
+const sessionRoutes = require("./routes/sessions");
+
+const historyRoutes = require("./routes/history");
+
+const db = require("./firebase");
 
 const {
   connectBroker,
@@ -32,8 +37,10 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-app.use("/users", userRoutes);
-app.use("/api", roomRoutes);
+app.use("/api/rooms", roomRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/sessions", sessionRoutes);
+app.use("/api/history", historyRoutes);
 
 app.get("/", (req, res) => {
   res.send("Backend OK");
@@ -169,8 +176,18 @@ function pickWinner(room, scores) {
 }
 
 function endGame(io, roomId, room) {
+  
   const scores = computeScores(room);
   const { winner, tied, reason } = pickWinner(room, scores);
+
+  const historyRef = db.ref("matchHistory").push();
+
+  historyRef.set({
+    roomId: roomId,
+    winner: winner || "Draw",
+    players: room.players,
+    timestamp: Date.now()
+  });
 
   io.to(roomId).emit("gameEnded", {
     roomId,

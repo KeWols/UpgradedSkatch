@@ -19,6 +19,9 @@ const IngamePage = () => {
   const [joinRoomIdInput, setJoinRoomIdInput] = useState("");
   const [isReady, setIsReady] = useState(false);
 
+  const [matchHistory, setMatchHistory] = useState([]);
+  const [showHistory, setShowHistory] = useState(false);
+
   useEffect(() => {
     if (!playerName) {
       alert("Not logged in. Redirecting to login.");
@@ -152,6 +155,34 @@ const IngamePage = () => {
     setIsReady(true);
   };
 
+  const handleShowHistory = async () => {
+    
+    if (showHistory) {
+      setShowHistory(false);
+      return;
+    }
+
+    try {
+
+      const response = await fetch(`/api/history/${playerName}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+
+        const historyArray = Array.isArray(data) ? data : Object.values(data);
+        
+        historyArray.sort((a, b) => b.timestamp - a.timestamp);
+        
+        setMatchHistory(historyArray);
+        setShowHistory(true);
+      } else {
+        console.error("Hiba a történet lekérésekor");
+      }
+    } catch (error) {
+      console.error("Szerver hiba:", error);
+    }
+  };
+
   const playerCount = players.length;
 
   return (
@@ -199,6 +230,43 @@ const IngamePage = () => {
           playerCount={playerCount}
         />
       )}
+
+      {/* 3. ÚJ GOMB ÉS LISTA MEGJELENÍTÉSE */}
+      <div style={{ margin: "20px 0", borderTop: "1px solid #ccc", paddingTop: "10px" }}>
+        <button onClick={handleShowHistory}>
+            {showHistory ? "Előzmények elrejtése" : "Korábbi meccseim (Rich Client)"}
+        </button>
+
+        {showHistory && (
+          <div style={{ 
+            marginTop: "10px", 
+            maxHeight: "200px", 
+            overflowY: "auto", 
+            border: "1px solid #ddd", 
+            padding: "10px",
+            backgroundColor: "#f9f9f9"
+          }}>
+            {matchHistory.length === 0 ? (
+              <p>Még nem játszottál meccset.</p>
+            ) : (
+              <ul style={{ listStyleType: "none", padding: 0 }}>
+                {matchHistory.map((match, index) => (
+                  <li key={index} style={{ marginBottom: "8px", borderBottom: "1px solid #eee", paddingBottom: "4px" }}>
+                    <strong>{new Date(match.timestamp).toLocaleString()}</strong><br/>
+                    Szoba: {match.roomId} | 
+                    Nyertes: <span style={{ color: match.winner === playerName ? "green" : "red", fontWeight: "bold" }}>
+                      {match.winner}
+                    </span>
+                    <br/>
+                    <small>Játékosok: {match.players ? match.players.join(", ") : "?"}</small>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+      </div>
+
     </div>
   );
 };

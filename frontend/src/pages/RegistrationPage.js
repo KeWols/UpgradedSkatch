@@ -11,7 +11,7 @@ const RegistrationPage = () => {
     e.preventDefault();
     try {
       
-      const response = await axios.post("/users/register", {username, password});
+      const response = await axios.post("/api/users", { username, password });
 
       alert(response.data.message);
       // Sikeres regisztráció után átirányítás:

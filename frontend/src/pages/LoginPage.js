@@ -12,7 +12,7 @@ const LoginPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post("/users/login", formData);
+      const response = await axios.post("/api/sessions", formData);
 
       console.log("Login response:", response.data);
 
