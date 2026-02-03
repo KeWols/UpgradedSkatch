@@ -9,7 +9,8 @@ import {
   sendNextTurn,
   sendDrawCard,
   sendDiscardDrawnCard,
-  sendSwapDrawnWithHand
+  sendSwapDrawnWithHand,
+  sendSkatch
 } from "../utils/websocket";
 
 import cardBack from "../assets/card-back.png";
@@ -43,6 +44,12 @@ function SkatchCardGame() {
 
   const [deckSize, setDeckSize] = useState(state?.deckSize ?? null);
   const [drawnCardImage, setDrawnCardImage] = useState(null);
+
+  const [completedRounds, setCompletedRounds] = useState(state?.completedRounds ?? 0);
+  const [finalRoundActive, setFinalRoundActive] = useState(state?.finalRoundActive ?? false);
+  const [skatchCaller, setSkatchCaller] = useState(state?.skatchCaller ?? null);
+  const [gameResult, setGameResult] = useState(null);
+
 
   useEffect(() => {
     if (!roomId || players.length === 0) {
@@ -108,8 +115,35 @@ function SkatchCardGame() {
       });
 
       s.on("nextTurnUpdate", (data) => {
-        if (data.roomId !== roomId) return;
-        setCurrentTurn(data.nextPlayer);
+        if (data?.roomId !== roomId) return;
+
+        if (data.nextPlayer) setCurrentTurn(data.nextPlayer);
+        if (typeof data.completedRounds === "number") setCompletedRounds(data.completedRounds);
+        if (typeof data.finalRoundActive === "boolean") setFinalRoundActive(data.finalRoundActive);
+        if (data.skatchCaller !== undefined) setSkatchCaller(data.skatchCaller);
+      });
+
+      s.on("finalRoundStarted", (data) => {
+        if (data?.roomId !== roomId) return;
+        setFinalRoundActive(true);
+        setSkatchCaller(data.skatchCaller || null);
+      });
+
+      s.on("gameEnded", (data) => {
+        if (data?.roomId !== roomId) return;
+
+        setGameResult(data);
+
+        const hands = data.hands || {};
+        const updates = {};
+        for (const [p, cards] of Object.entries(hands)) {
+          if (!Array.isArray(cards)) continue;
+          for (let i = 0; i < cards.length; i++) {
+            const img = getCardImage(cards[i]);
+            if (img) updates[`${p}-${i}`] = img;
+          }
+        }
+        setCardImages((prev) => ({ ...prev, ...updates }));
       });
 
       s.on("cardDrawn", (data) => {
@@ -160,6 +194,8 @@ function SkatchCardGame() {
         s.off("discardTopUpdate");
         s.off("clearDrawnCard");
         s.off("handCardReset");
+        s.off("finalRoundStarted");
+        s.off("gameEnded");
       }
     };
   }, [roomId, players, playerName, currentTurn]);
@@ -340,6 +376,8 @@ function SkatchCardGame() {
   };
 
   const numPlayers = playersInRoom.length;
+  const canSkatch = playerName === currentTurn && completedRounds >= 2 && !finalRoundActive && !drawnCardImage;
+
 
   return (
     <div className="outerWrapper">
@@ -368,10 +406,11 @@ function SkatchCardGame() {
       <div className="board">
         <h2>SkatchCardGame: {roomId}</h2>
         <p>Players: {playersInRoom.join(", ")}</p>
-
-        <p>Cards per player: {cardsPerPlayerCount}</p>
         <p>Deck size: {deckSize ?? "unknown"}</p>
-        <p>Dealer index: {dealerIndex ?? "unknown"} | Turn index: {turnIndex ?? "unknown"}</p>
+
+        <p>Completed rounds: {completedRounds}</p>
+        {finalRoundActive && <p>Utolso kor</p>}
+        {skatchCaller && <p>Skatch caller: {skatchCaller}</p>}
 
 
         {/*<div className="row bottomRow">{renderCards(6, "bottom")}</div>*/}
@@ -385,13 +424,25 @@ function SkatchCardGame() {
         {renderCenterCards()}
       </div>
 
+      {gameResult && (
+        <div style={{ marginTop: 20 }}>
+          <h3>Game Over</h3>
+          <p>Winner: {gameResult.winner}</p>
+          <ul>
+            {Object.entries(gameResult.scores || {}).map(([p, sc]) => (
+              <li key={p}>{p}: {sc}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <div className="nextRoundContainer">
         <button
-          onClick={handleNextTurn}
-          disabled={playerName !== currentTurn}
+          onClick={() => sendSkatch(roomId)}
+          disabled={!canSkatch}
           className="nextRoundButton"
         >
-          Next Round
+          Skatch!
         </button>
       </div>
     </div>

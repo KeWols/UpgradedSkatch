@@ -73,6 +73,10 @@ function startGame(roomId) {
     discardPile: [],
     dealerIndex: 0,
     turnIndex: 0,
+    roundStarter: "",
+    completedRounds: 0,
+    finalRoundActive: false,
+    skatchCaller: null,
   };
 
   for (const p of players) {
@@ -88,6 +92,11 @@ function startGame(roomId) {
   rooms[gameRoomId].currentTurn = players[turnIndex];
   rooms[gameRoomId].pendingDraw = {};
 
+  rooms[gameRoomId].roundStarter = rooms[gameRoomId].currentTurn;
+  rooms[gameRoomId].completedRounds = 0;
+  rooms[gameRoomId].finalRoundActive = false;
+  rooms[gameRoomId].skatchCaller = null;
+
 
   io.to(roomId).emit("gameStarted", {
     gameRoomId,
@@ -98,12 +107,125 @@ function startGame(roomId) {
     deckSize: rooms[gameRoomId].deck.length,
     discardPile: rooms[gameRoomId].discardPile,
     cardsPerPlayer: CARDS_PER_PLAYER,
+    roundStarter: rooms[gameRoomId].roundStarter,
+    completedRounds: rooms[gameRoomId].completedRounds,
+    finalRoundActive: rooms[gameRoomId].finalRoundActive,
+    skatchCaller: rooms[gameRoomId].skatchCaller,
   });
 
 
   console.log("Game started:", gameRoomId);
 }
 
+function cardValue(card) {
+  if (!card || typeof card !== "string") return 0;
+
+  const suit = card.slice(-1);
+  const rank = card.slice(0, -1);
+
+  if (rank === "A") return 1;
+  if (rank === "J") return 11;
+  if (rank === "Q") return 12;
+  if (rank === "K") {
+    if (suit === "H" || suit === "D") return 0;
+    return 13;
+  }
+
+  const n = Number(rank);
+  if (Number.isFinite(n)) return n;
+  return 0;
+}
+
+function computeScores(room) {
+  const scores = {};
+  for (const p of room.players) {
+    const hand = room.hands?.[p] || [];
+    scores[p] = hand.reduce((sum, c) => sum + cardValue(c), 0);
+  }
+  return scores;
+}
+
+function pickWinner(room, scores) {
+  const players = room.players || [];
+  let min = Infinity;
+  for (const p of players) min = Math.min(min, scores[p]);
+
+  let tied = players.filter((p) => scores[p] === min);
+
+  if (tied.length === 1) return { winner: tied[0], tied, reason: "min_score" };
+
+  if (room.skatchCaller && tied.includes(room.skatchCaller)) {
+    return { winner: room.skatchCaller, tied, reason: "skatch_tiebreak" };
+  }
+
+  let minCards = Infinity;
+  for (const p of tied) minCards = Math.min(minCards, (room.hands?.[p] || []).length);
+  let tiedByCards = tied.filter((p) => (room.hands?.[p] || []).length === minCards);
+
+  if (tiedByCards.length === 1) return { winner: tiedByCards[0], tied: tiedByCards, reason: "fewest_cards" };
+
+  const randomPick = tiedByCards[Math.floor(Math.random() * tiedByCards.length)];
+  return { winner: randomPick, tied: tiedByCards, reason: "random" };
+}
+
+function endGame(io, roomId, room) {
+  const scores = computeScores(room);
+  const { winner, tied, reason } = pickWinner(room, scores);
+
+  io.to(roomId).emit("gameEnded", {
+    roomId,
+    hands: room.hands,
+    scores,
+    winner,
+    tied,
+    reason,
+    skatchCaller: room.skatchCaller,
+  });
+}
+
+function advanceTurn(io, roomId, room) {
+  if (!room || !Array.isArray(room.players) || room.players.length === 0) return;
+
+  const players = room.players;
+  const cur = room.currentTurn;
+  const curIdx = players.indexOf(cur);
+  const startIdx = curIdx >= 0 ? curIdx : 0;
+
+  let nextIdx = (startIdx + 1) % players.length;
+  let next = players[nextIdx];
+
+  if (room.finalRoundActive && room.skatchCaller && next === room.skatchCaller) {
+    endGame(io, roomId, room);
+    return;
+  }
+
+  if (room.deck && room.deck.length === 0) {
+    endGame(io, roomId, room);
+    return;
+  }
+
+  room.currentTurn = next;
+  room.turnIndex = nextIdx;
+
+  if (room.roundStarter && next === room.roundStarter) {
+    room.completedRounds = (room.completedRounds || 0) + 1;
+  }
+
+  if (room.pendingDraw) room.pendingDraw[next] = null;
+
+  io.to(roomId).emit("nextTurnUpdate", {
+    roomId,
+    nextPlayer: next,
+    completedRounds: room.completedRounds || 0,
+    finalRoundActive: !!room.finalRoundActive,
+    skatchCaller: room.skatchCaller || null,
+  });
+
+  publishNextTurn(roomId, next);
+}
+
+
+//-------------------------------------------------------------------------
 
 io.on("connection", (socket) => {
   console.log("WebSocket connected:", socket.id);
@@ -239,14 +361,9 @@ io.on("connection", (socket) => {
 
     socket.emit("clearDrawnCard");
 
-    const idx = room.players.indexOf(room.currentTurn);
-    const next = room.players[(idx + 1) % room.players.length];
-    room.currentTurn = next;
-    if (room.pendingDraw) room.pendingDraw[next] = null;
-
-    io.to(roomId).emit("nextTurnUpdate", { roomId, nextPlayer: next });
-    publishNextTurn(roomId, next);
+    advanceTurn(io, roomId, room);
   });
+
 
   socket.on("swapDrawnWithHand", ({ roomId, handIndex }) => {
     const userData = socketToUser[socket.id];
@@ -279,13 +396,7 @@ io.on("connection", (socket) => {
     socket.emit("clearDrawnCard");
     socket.emit("handCardReset", { cardContainerID: `${player}-${idx}` });
 
-    const t = room.players.indexOf(room.currentTurn);
-    const next = room.players[(t + 1) % room.players.length];
-    room.currentTurn = next;
-    if (room.pendingDraw) room.pendingDraw[next] = null;
-
-    io.to(roomId).emit("nextTurnUpdate", { roomId, nextPlayer: next });
-    publishNextTurn(roomId, next);
+    advanceTurn(io, roomId, room);
   });
 
 
@@ -358,6 +469,35 @@ io.on("connection", (socket) => {
       if (room.pendingDraw) room.pendingDraw[nextPlayer] = null;
     }
     publishNextTurn(roomId, nextPlayer);
+  });
+
+
+  socket.on("skatch", ({ roomId }) => {
+    const userData = socketToUser[socket.id];
+    if (!userData) return;
+
+    const room = rooms[roomId];
+    if (!room) return;
+
+    const player = userData.playerName;
+
+    if (room.currentTurn && room.currentTurn !== player) return;
+    if (room.finalRoundActive) return;
+
+    const rounds = room.completedRounds || 0;
+    if (rounds < 2) return;
+
+    if (room.pendingDraw && room.pendingDraw[player]) return;
+
+    room.finalRoundActive = true;
+    room.skatchCaller = player;
+
+    io.to(roomId).emit("finalRoundStarted", {
+      roomId,
+      skatchCaller: player,
+    });
+
+    advanceTurn(io, roomId, room);
   });
 
 

@@ -98,3 +98,9 @@ export function sendSwapDrawnWithHand(roomId, handIndex) {
   if (!s || !s.connected) return;
   s.emit("swapDrawnWithHand", { roomId, handIndex });
 }
+
+export function sendSkatch(roomId) {
+  const s = getSocket();
+  if (!s || !s.connected) return;
+  s.emit("skatch", { roomId });
+}
