@@ -32,10 +32,14 @@ const LoginPage = () => {
 
   const handleForgotPassword = async () => {
     const userToReset = prompt("Kérlek add meg a felhasználóneved:");
-    if (!userToReset) return;
-    
+    if (!userToReset) {
+      return;
+    }
+
     const newPass = prompt("Add meg az új jelszót:");
-    if (!newPass) return;
+    if (!newPass) {
+      return;
+    }
 
     const data = await updatePassword(userToReset, newPass);
     if (data.message) {

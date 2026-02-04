@@ -12,7 +12,7 @@ function generateRoomCode() {
 router.post("/", (req, res) => {
   const roomId = generateRoomCode();
   rooms[roomId] = { players: [], status: "waiting" };
-  console.log(`✅ Új szoba létrehozva: ${roomId}`);
+  console.log(`Uj szoba letrehozva: ${roomId}`);
   return res.status(201).json({ roomId });
 });
 
@@ -58,7 +58,7 @@ router.delete("/:roomId", (req, res) => {
   // Törlés a memóriából (roomsData.js-ből jön a rooms referencia)
   if (rooms[roomId]) {
     delete rooms[roomId];
-    console.log(`🗑️ Szoba törölve: ${roomId}`);
+    console.log(`Szoba torolve: ${roomId}`);
     return res.status(200).json({ message: "Szoba sikeresen törölve" });
   } else {
     return res.status(404).json({ error: "A szoba nem található" });

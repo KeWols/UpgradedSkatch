@@ -11,10 +11,16 @@ const VoiceChat = ({ socket, roomId, playerName, playerCount }) => {
   const [connected, setConnected] = useState(false);
 
   useEffect(() => {
-    if (!socket || !socket.connected || !roomId || !playerName) return;
-    if (playerCount !== 2) return;
+    if (!socket || !socket.connected || !roomId || !playerName) {
+      return;
+    }
+    if (playerCount !== 2) {
+      return;
+    }
 
-    if (startedRef.current) return;
+    if (startedRef.current) {
+      return;
+    }
     startedRef.current = true;
 
     let closed = false;
@@ -39,7 +45,9 @@ const VoiceChat = ({ socket, roomId, playerName, playerCount }) => {
 
     const onIceCandidate = async (data) => {
       const pc = pcRef.current;
-      if (!pc || !data?.candidate) return;
+      if (!pc || !data?.candidate) {
+        return;
+      }
       try {
         await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
       } catch {}
@@ -47,7 +55,9 @@ const VoiceChat = ({ socket, roomId, playerName, playerCount }) => {
 
     const onOffer = async (data) => {
       const pc = pcRef.current;
-      if (!pc || !data?.offer) return;
+      if (!pc || !data?.offer) {
+        return;
+      }
 
       await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
       const answer = await pc.createAnswer();
@@ -57,16 +67,27 @@ const VoiceChat = ({ socket, roomId, playerName, playerCount }) => {
 
     const onAnswer = async (data) => {
       const pc = pcRef.current;
-      if (!pc || !data?.answer) return;
+      if (!pc || !data?.answer) {
+        return;
+      }
       await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
     };
 
     const onWebrtcReady = async ({ initiatorId }) => {
+      
       const pc = pcRef.current;
-      if (!pc) return;
 
-      if (socket.id !== initiatorId) return;
-      if (pc.signalingState !== "stable") return;
+      if (!pc){
+        return;
+      }
+
+      if (socket.id !== initiatorId) {
+        return;
+      }
+      
+      if (pc.signalingState !== "stable") {
+        return;
+      }
 
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
@@ -74,16 +95,20 @@ const VoiceChat = ({ socket, roomId, playerName, playerCount }) => {
     };
 
     const start = async () => {
+      //mikrofon engedely
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      if (closed) {
+
+      if (closed){
         stream.getTracks().forEach((t) => t.stop());
         return;
       }
+
       localStreamRef.current = stream;
 
       const pc = new RTCPeerConnection(ICE_SERVERS);
       pcRef.current = pc;
 
+      //mikrofon hang hozzaadasa a kapcsolathoz
       stream.getTracks().forEach((track) => pc.addTrack(track, stream));
 
       pc.onicecandidate = (event) => {
@@ -92,10 +117,12 @@ const VoiceChat = ({ socket, roomId, playerName, playerCount }) => {
         }
       };
 
+      //Hang fogadasa a kapcsolaton
       pc.ontrack = (event) => {
 
         console.log("ontrack", event.streams[0]?.getAudioTracks()?.[0]);
 
+        //Ha van audio track, akkor lejatszas
         if (audioRef.current) {
           audioRef.current.srcObject = event.streams[0];
           audioRef.current.play().catch(() => {});
@@ -103,8 +130,14 @@ const VoiceChat = ({ socket, roomId, playerName, playerCount }) => {
       };
 
       pc.onconnectionstatechange = () => {
-        if (pc.connectionState === "connected") setConnected(true);
-        if (pc.connectionState === "failed" || pc.connectionState === "closed") setConnected(false);
+
+        if (pc.connectionState === "connected"){
+          setConnected(true);
+        }
+
+        if (pc.connectionState === "failed" || pc.connectionState === "closed") {
+          setConnected(false);
+        }
       };
 
       socket.on("ice_candidate", onIceCandidate);

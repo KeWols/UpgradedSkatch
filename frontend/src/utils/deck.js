@@ -15,13 +15,17 @@ const rankMap = {
 };
 
 export function getCardImage(cardCode) {
-  if (!cardCode || typeof cardCode !== "string") return null;
+  if (!cardCode || typeof cardCode !== "string") {
+    return null;
+  }
 
   const suitLetter = cardCode.slice(-1);
   const rankRaw = cardCode.slice(0, -1);
 
   const suit = suitMap[suitLetter];
-  if (!suit) return null;
+  if (!suit) {
+    return null;
+  }
 
   const rank = rankMap[rankRaw] || rankRaw.toLowerCase();
   const filename = `./${rank}_of_${suit}.png`;

@@ -115,32 +115,50 @@ function SkatchCardGame() {
       });
 
       s.on("nextTurnUpdate", (data) => {
-        if (data?.roomId !== roomId) return;
+        if (data?.roomId !== roomId) {
+          return;
+        }
 
-        if (data.nextPlayer) setCurrentTurn(data.nextPlayer);
-        if (typeof data.completedRounds === "number") setCompletedRounds(data.completedRounds);
-        if (typeof data.finalRoundActive === "boolean") setFinalRoundActive(data.finalRoundActive);
-        if (data.skatchCaller !== undefined) setSkatchCaller(data.skatchCaller);
+        if (data.nextPlayer) {
+          setCurrentTurn(data.nextPlayer);
+        }
+        if (typeof data.completedRounds === "number") {
+          setCompletedRounds(data.completedRounds);
+        }
+        if (typeof data.finalRoundActive === "boolean") {
+          setFinalRoundActive(data.finalRoundActive);
+        }
+        if (data.skatchCaller !== undefined) {
+          setSkatchCaller(data.skatchCaller);
+        }
       });
 
       s.on("finalRoundStarted", (data) => {
-        if (data?.roomId !== roomId) return;
+        if (data?.roomId !== roomId) {
+          return;
+        }
         setFinalRoundActive(true);
         setSkatchCaller(data.skatchCaller || null);
       });
 
       s.on("gameEnded", (data) => {
-        if (data?.roomId !== roomId) return;
+        if (data?.roomId !== roomId) {
+          return;
+        }
 
         setGameResult(data);
 
         const hands = data.hands || {};
         const updates = {};
         for (const [p, cards] of Object.entries(hands)) {
-          if (!Array.isArray(cards)) continue;
+          if (!Array.isArray(cards)) {
+            continue;
+          }
           for (let i = 0; i < cards.length; i++) {
             const img = getCardImage(cards[i]);
-            if (img) updates[`${p}-${i}`] = img;
+            if (img) {
+              updates[`${p}-${i}`] = img;
+            }
           }
         }
         setCardImages((prev) => ({ ...prev, ...updates }));
@@ -160,13 +178,17 @@ function SkatchCardGame() {
       s.on("revealCard", (data) => {
         const { cardContainerID, card } = data || {};
         const img = getCardImage(card);
-        if (!img) return;
+        if (!img) {
+          return;
+        }
         setCardImages((prev) => ({ ...prev, [cardContainerID]: img }));
       });
 
       s.on("discardTopUpdate", (data) => {
         const img = getCardImage(data?.card);
-        if (img) setDiscardZoneImage(img);
+        if (img) {
+          setDiscardZoneImage(img);
+        }
       });
 
       s.on("clearDrawnCard", () => {
@@ -176,7 +198,9 @@ function SkatchCardGame() {
 
       s.on("handCardReset", (data) => {
         const id = data?.cardContainerID;
-        if (!id) return;
+        if (!id) {
+          return;
+        }
         setCardImages((prev) => ({ ...prev, [id]: cardBack }));
       });
 
@@ -201,19 +225,23 @@ function SkatchCardGame() {
   }, [roomId, players, playerName, currentTurn]);
 
   const handleMouseEnter = (cardContainerID) => {
-    if (!roomId || !playerName) return;
+    if (!roomId || !playerName) {
+      return;
+    }
     const color = playerColors[playerName] || "white";
     sendHoverOnCard(roomId, cardContainerID, color, playerName);
   };
 
   const handleMouseLeave = (cardContainerID) => {
-    if (!roomId || !playerName) return;
+    if (!roomId || !playerName) {
+      return;
+    }
     sendHoverOffCard(roomId, cardContainerID, playerName);
   };
 
   // const handleReveal = async (cardContainerID) => {
-  //   if (!roomId || !playerName) return;
-  //   console.log(`🖱️ Kattintott kártya: ${cardContainerID} (player: ${playerName})`);
+  //   if (!roomId || !playerName) { return; }
+  //   console.log(`Kattintott kartya: ${cardContainerID} (player: ${playerName})`);
 
   //   setCardImages((prev) => ({
   //     ...prev,
@@ -233,7 +261,9 @@ function SkatchCardGame() {
   // };
 
   const handleReveal = async (cardContainerID) => {
-    if (!roomId || !playerName) return;
+    if (!roomId || !playerName) {
+      return;
+    }
 
     sendCardToReveal(roomId, cardContainerID);
 
@@ -249,16 +279,22 @@ function SkatchCardGame() {
 
   const parseCardId = (id) => {
     const dash = id.lastIndexOf("-");
-    if (dash <= 0) return null;
+    if (dash <= 0) {
+      return null;
+    }
     const owner = id.slice(0, dash);
     const idx = Number(id.slice(dash + 1));
-    if (!Number.isInteger(idx)) return null;
+    if (!Number.isInteger(idx)) {
+      return null;
+    }
     return { owner, idx };
   };
 
   const handleCardClick = (cardContainerID) => {
     const info = parseCardId(cardContainerID);
-    if (!info) return;
+    if (!info) {
+      return;
+    }
 
     if (drawnCardImage && info.owner === playerName && currentTurn === playerName) {
       sendSwapDrawnWithHand(roomId, info.idx);
@@ -269,8 +305,12 @@ function SkatchCardGame() {
   };
 
   const handleDiscardClick = () => {
-    if (!drawnCardImage) return;
-    if (currentTurn !== playerName) return;
+    if (!drawnCardImage) {
+      return;
+    }
+    if (currentTurn !== playerName) {
+      return;
+    }
     sendDiscardDrawnCard(roomId);
   };
 
@@ -280,22 +320,30 @@ function SkatchCardGame() {
   };
 
   const handleDrawCard = () => {
-    if (!roomId || !playerName) return;
-    if (currentTurn && currentTurn !== playerName) return;
-    if (drawnCardImage) return;
+    if (!roomId || !playerName) {
+      return;
+    }
+    if (currentTurn && currentTurn !== playerName) {
+      return;
+    }
+    if (drawnCardImage) {
+      return;
+    }
 
     sendDrawCard(roomId, playerName);
   };
 
 
   const handleNextTurn = () => {
-    if (!roomId || playersInRoom.length < 1) return;
-    
+    if (!roomId || playersInRoom.length < 1) {
+      return;
+    }
+
     const idx = playersInRoom.indexOf(currentTurn);
     const nextIndex = (idx + 1) % playersInRoom.length;
     const nextP = playersInRoom[nextIndex];
-  
-    console.log("📤 Next turn ->", nextP);
+
+    console.log("Next turn ->", nextP);
     sendNextTurn(roomId, nextP);
   };
 

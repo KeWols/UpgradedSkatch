@@ -31,13 +31,17 @@ const IngamePage = () => {
   }, [playerName, navigate]);
 
   useEffect(() => {
-    if (!roomId || !playerName) return;
+    if (!roomId || !playerName) {
+      return;
+    }
     const s = connectWebSocket(roomId, playerName);
     setSocket(s);
   }, [roomId, playerName]);
 
   useEffect(() => {
-    if (!socket || !roomId || !playerName) return;
+    if (!socket || !roomId || !playerName) {
+      return;
+    }
 
     const handleUserJoined = (data) => {
       if (data?.roomId === roomId && Array.isArray(data.players)) {
@@ -72,7 +76,9 @@ const IngamePage = () => {
         currentTurn,
       } = payload || {};
 
-      if (!gameRoomId) return;
+      if (!gameRoomId) {
+        return;
+      }
 
       socket.emit("join_room", { roomId: gameRoomId, playerName });
 
@@ -114,7 +120,9 @@ const IngamePage = () => {
 
   const handleJoinAnotherRoom = async () => {
     const target = joinRoomIdInput.trim();
-    if (!target) return;
+    if (!target) {
+      return;
+    }
 
     const response = await joinRoom(target, playerName);
     if (response?.error) {
@@ -129,8 +137,11 @@ const IngamePage = () => {
     setReadyPlayers([]);
     setChatLog([]);
 
-    if (Array.isArray(response.players)) setPlayers([...response.players]);
-    else setPlayers([]);
+    if (Array.isArray(response.players)) {
+      setPlayers([...response.players]);
+    } else {
+      setPlayers([]);
+    }
 
     setRoomId(response.roomId);
     sessionStorage.setItem("roomId", response.roomId);
@@ -146,12 +157,16 @@ const IngamePage = () => {
   };
 
   const sendMessage = (message) => {
-    if (!socket || !socket.connected) return;
+    if (!socket || !socket.connected) {
+      return;
+    }
     socket.emit("send_message", { roomId, playerName, message });
   };
 
   const handleReady = () => {
-    if (!socket || !socket.connected) return;
+    if (!socket || !socket.connected) {
+      return;
+    }
     socket.emit("player_ready", { roomId, playerName });
     setIsReady(true);
   };
@@ -185,7 +200,9 @@ const IngamePage = () => {
   };
 
   const handleDeleteAccount = async () => {
-    if (!window.confirm("Biztosan törölni szeretnéd a fiókodat?")) return;
+    if (!window.confirm("Biztosan törölni szeretnéd a fiókodat?")) {
+      return;
+    }
 
     try {
       const response = await deleteUser(playerName);

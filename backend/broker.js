@@ -17,22 +17,26 @@ async function connectBroker(){
     // A 'fanout' helyett most 'topic'-et használunk
     await channel.assertExchange("game_exchange", "topic", { durable: false });
 
-    console.log("✅ RabbitMQ kapcsolat létrejött (topic exchange)!");
+    console.log("RabbitMQ kapcsolat letrejott (topic exchange)!");
     return channel;
   } catch (error) {
-    console.error("🚨 RabbitMQ kapcsolódási hiba:", error);
+    console.error("RabbitMQ kapcsolodasi hiba:", error);
     throw error;
   }
 }
 
-// ❌ RabbitMQ kapcsolat lezárása (ha szükséges)
+// RabbitMQ kapcsolat lezarasa (ha szukseges)
 async function closeBroker() {
   try {
-    if (channel) await channel.close();
-    if (connection) await connection.close();
-    console.log("❌ RabbitMQ kapcsolat lezárva!");
+    if (channel) {
+      await channel.close();
+    }
+    if (connection) {
+      await connection.close();
+    }
+    console.log("RabbitMQ kapcsolat lezarva!");
   } catch (error) {
-    console.error("🚨 RabbitMQ lezárási hiba:", error);
+    console.error("RabbitMQ lezarsi hiba:", error);
   }
 }
 
@@ -56,7 +60,7 @@ async function subscribeToRoomEvent(roomId, eventKey, callback) {
     { noAck: true }
   );
 
-  console.log(`✅ Feliratkozva a topicra: ${routingKey}`);
+  console.log(`Feliratkozva a topicra: ${routingKey}`);
 }
 
 async function publishToRoomEvent(roomId, eventKey, payload) {
@@ -66,7 +70,7 @@ async function publishToRoomEvent(roomId, eventKey, payload) {
   await ch.assertExchange("game_exchange", "topic", { durable: false });
   ch.publish("game_exchange", routingKey, Buffer.from(JSON.stringify(payload)));
 
-  console.log(`📤 Published to ${routingKey}:`, payload);
+  console.log(`Published to ${routingKey}:`, payload);
 }
 
 // ==== Hover események spec. segédfüggvények ====
@@ -89,7 +93,7 @@ async function publishHoverOnCard(roomId, cardContainerID, color, playerName) {
   });
 
   channel.publish(`game_exchange`, `${roomId}.hoverOnCard`, Buffer.from(message));
-  console.log(`📤 Published to ${roomId}.hoverOnCard: ${message}`);
+  console.log(`Published to ${roomId}.hoverOnCard: ${message}`);
 }
 
 async function publishHoverOffCard(roomId, cardContainerID, playerName) {
@@ -102,7 +106,7 @@ async function publishHoverOffCard(roomId, cardContainerID, playerName) {
   });
 
   channel.publish(`game_exchange`, `${roomId}.hoverOffCard`, Buffer.from(message));
-  console.log(`📤 Published to ${roomId}.hoverOffCard: ${message}`);
+  console.log(`Published to ${roomId}.hoverOffCard: ${message}`);
 }
 
 // =============== Új reveal/hide események ===============

@@ -65,7 +65,9 @@ function createStringDeck() {
 }
 
 function startGame(roomId) {
-  if (!rooms[roomId]) return;
+  if (!rooms[roomId]) {
+    return;
+  }
 
   const gameRoomId = `game_${roomId}`;
   const deck = createStringDeck();
@@ -125,21 +127,33 @@ function startGame(roomId) {
 }
 
 function cardValue(card) {
-  if (!card || typeof card !== "string") return 0;
+  if (!card || typeof card !== "string") {
+    return 0;
+  }
 
   const suit = card.slice(-1);
   const rank = card.slice(0, -1);
 
-  if (rank === "A") return 1;
-  if (rank === "J") return 11;
-  if (rank === "Q") return 12;
+  if (rank === "A") {
+    return 1;
+  }
+  if (rank === "J") {
+    return 11;
+  }
+  if (rank === "Q") {
+    return 12;
+  }
   if (rank === "K") {
-    if (suit === "H" || suit === "D") return 0;
+    if (suit === "H" || suit === "D") {
+      return 0;
+    }
     return 13;
   }
 
   const n = Number(rank);
-  if (Number.isFinite(n)) return n;
+  if (Number.isFinite(n)) {
+    return n;
+  }
   return 0;
 }
 
@@ -159,7 +173,9 @@ function pickWinner(room, scores) {
 
   let tied = players.filter((p) => scores[p] === min);
 
-  if (tied.length === 1) return { winner: tied[0], tied, reason: "min_score" };
+  if (tied.length === 1) {
+    return { winner: tied[0], tied, reason: "min_score" };
+  }
 
   if (room.skatchCaller && tied.includes(room.skatchCaller)) {
     return { winner: room.skatchCaller, tied, reason: "skatch_tiebreak" };
@@ -169,7 +185,9 @@ function pickWinner(room, scores) {
   for (const p of tied) minCards = Math.min(minCards, (room.hands?.[p] || []).length);
   let tiedByCards = tied.filter((p) => (room.hands?.[p] || []).length === minCards);
 
-  if (tiedByCards.length === 1) return { winner: tiedByCards[0], tied: tiedByCards, reason: "fewest_cards" };
+  if (tiedByCards.length === 1) {
+    return { winner: tiedByCards[0], tied: tiedByCards, reason: "fewest_cards" };
+  }
 
   const randomPick = tiedByCards[Math.floor(Math.random() * tiedByCards.length)];
   return { winner: randomPick, tied: tiedByCards, reason: "random" };
@@ -201,7 +219,9 @@ function endGame(io, roomId, room) {
 }
 
 function advanceTurn(io, roomId, room) {
-  if (!room || !Array.isArray(room.players) || room.players.length === 0) return;
+  if (!room || !Array.isArray(room.players) || room.players.length === 0) {
+    return;
+  }
 
   const players = room.players;
   const cur = room.currentTurn;
@@ -228,7 +248,9 @@ function advanceTurn(io, roomId, room) {
     room.completedRounds = (room.completedRounds || 0) + 1;
   }
 
-  if (room.pendingDraw) room.pendingDraw[next] = null;
+  if (room.pendingDraw) {
+    room.pendingDraw[next] = null;
+  }
 
   io.to(roomId).emit("nextTurnUpdate", {
     roomId,
@@ -248,7 +270,9 @@ io.on("connection", (socket) => {
   console.log("WebSocket connected:", socket.id);
 
   socket.on("join_room", ({ roomId, playerName }) => {
-    if (!rooms[roomId]) return;
+    if (!rooms[roomId]) {
+      return;
+    }
 
     socketToUser[socket.id] = { roomId, playerName };
     socket.join(roomId);
@@ -297,7 +321,9 @@ io.on("connection", (socket) => {
 
     const members = voiceMembers.get(roomId) || [];
 
-    if (!members.includes(socket.id)) members.push(socket.id);
+    if (!members.includes(socket.id)) {
+      members.push(socket.id);
+    }
     voiceMembers.set(roomId, members);
 
     console.log("Csatlakozas a voice chathez:", playerName, roomId);
@@ -320,9 +346,13 @@ io.on("connection", (socket) => {
   });
 
   socket.on("player_ready", ({ roomId, playerName }) => {
-    if (!rooms[roomId]) return;
+    if (!rooms[roomId]) {
+      return;
+    }
 
-    if (!rooms[roomId].readyPlayers) rooms[roomId].readyPlayers = [];
+    if (!rooms[roomId].readyPlayers) {
+      rooms[roomId].readyPlayers = [];
+    }
     if (!rooms[roomId].readyPlayers.includes(playerName)) {
       rooms[roomId].readyPlayers.push(playerName);
     }
@@ -339,12 +369,20 @@ io.on("connection", (socket) => {
 
   socket.on("drawCard", ({ roomId, playerName }) => {
     const room = rooms[roomId];
-    if (!room || !Array.isArray(room.deck) || room.deck.length === 0) return;
+    if (!room || !Array.isArray(room.deck) || room.deck.length === 0) {
+      return;
+    }
 
-    if (room.currentTurn && room.currentTurn !== playerName) return;
+    if (room.currentTurn && room.currentTurn !== playerName) {
+      return;
+    }
 
-    if (!room.pendingDraw) room.pendingDraw = {};
-    if (room.pendingDraw[playerName]) return;
+    if (!room.pendingDraw) {
+      room.pendingDraw = {};
+    }
+    if (room.pendingDraw[playerName]) {
+      return;
+    }
 
     const card = room.deck.pop();
     room.pendingDraw[playerName] = card;
@@ -359,16 +397,24 @@ io.on("connection", (socket) => {
 
   socket.on("discardDrawnCard", ({ roomId }) => {
     const userData = socketToUser[socket.id];
-    if (!userData) return;
+    if (!userData) {
+      return;
+    }
 
     const room = rooms[roomId];
-    if (!room || !room.pendingDraw) return;
+    if (!room || !room.pendingDraw) {
+      return;
+    }
 
     const player = userData.playerName;
-    if (room.currentTurn && room.currentTurn !== player) return;
+    if (room.currentTurn && room.currentTurn !== player) {
+      return;
+    }
 
     const drawn = room.pendingDraw[player];
-    if (!drawn) return;
+    if (!drawn) {
+      return;
+    }
 
     room.discardPile.push(drawn);
     room.pendingDraw[player] = null;
@@ -384,22 +430,34 @@ io.on("connection", (socket) => {
 
   socket.on("swapDrawnWithHand", ({ roomId, handIndex }) => {
     const userData = socketToUser[socket.id];
-    if (!userData) return;
+    if (!userData) {
+      return;
+    }
 
     const room = rooms[roomId];
-    if (!room || !room.pendingDraw || !room.hands) return;
+    if (!room || !room.pendingDraw || !room.hands) {
+      return;
+    }
 
     const player = userData.playerName;
-    if (room.currentTurn && room.currentTurn !== player) return;
+    if (room.currentTurn && room.currentTurn !== player) {
+      return;
+    }
 
     const drawn = room.pendingDraw[player];
-    if (!drawn) return;
+    if (!drawn) {
+      return;
+    }
 
     const idx = Number(handIndex);
-    if (!Number.isInteger(idx)) return;
+    if (!Number.isInteger(idx)) {
+      return;
+    }
 
     const hand = room.hands[player];
-    if (!Array.isArray(hand) || idx < 0 || idx >= hand.length) return;
+    if (!Array.isArray(hand) || idx < 0 || idx >= hand.length) {
+      return;
+    }
 
     const oldCard = hand[idx];
     hand[idx] = drawn;
@@ -419,7 +477,9 @@ io.on("connection", (socket) => {
 
   socket.on("discardCard", ({ roomId, playerName, card }) => {
     const room = rooms[roomId];
-    if (!room || !room.hands?.[playerName]) return;
+    if (!room || !room.hands?.[playerName]) {
+      return;
+    }
 
     room.hands[playerName] = room.hands[playerName].filter((c) => c !== card);
     room.discardPile.push(card);
@@ -429,7 +489,9 @@ io.on("connection", (socket) => {
 
   socket.on("endTurn", ({ roomId }) => {
     const room = rooms[roomId];
-    if (!room || !Array.isArray(room.players) || room.players.length === 0) return;
+    if (!room || !Array.isArray(room.players) || room.players.length === 0) {
+      return;
+    }
 
     room.turnIndex = (room.turnIndex + 1) % room.players.length;
     room.currentTurn = room.players[room.turnIndex];
@@ -451,7 +513,9 @@ io.on("connection", (socket) => {
 
   socket.on("card_to_reveal", ({ roomId, cardContainerID }) => {
     const userData = socketToUser[socket.id];
-    if (!userData) return;
+    if (!userData) {
+      return;
+    }
 
     const room = rooms[roomId];
     if (room && room.hands && typeof cardContainerID === "string") {
@@ -475,7 +539,9 @@ io.on("connection", (socket) => {
 
   socket.on("card_to_hide", ({ roomId, cardContainerID }) => {
     const userData = socketToUser[socket.id];
-    if (!userData) return;
+    if (!userData) {
+      return;
+    }
     publishCardToHide(roomId, cardContainerID, userData.playerName);
   });
 
@@ -483,7 +549,9 @@ io.on("connection", (socket) => {
     const room = rooms[roomId];
     if (room) {
       room.currentTurn = nextPlayer;
-      if (room.pendingDraw) room.pendingDraw[nextPlayer] = null;
+      if (room.pendingDraw) {
+        room.pendingDraw[nextPlayer] = null;
+      }
     }
     publishNextTurn(roomId, nextPlayer);
   });
@@ -491,20 +559,32 @@ io.on("connection", (socket) => {
 
   socket.on("skatch", ({ roomId }) => {
     const userData = socketToUser[socket.id];
-    if (!userData) return;
+    if (!userData) {
+      return;
+    }
 
     const room = rooms[roomId];
-    if (!room) return;
+    if (!room) {
+      return;
+    }
 
     const player = userData.playerName;
 
-    if (room.currentTurn && room.currentTurn !== player) return;
-    if (room.finalRoundActive) return;
+    if (room.currentTurn && room.currentTurn !== player) {
+      return;
+    }
+    if (room.finalRoundActive) {
+      return;
+    }
 
     const rounds = room.completedRounds || 0;
-    if (rounds < 2) return;
+    if (rounds < 2) {
+      return;
+    }
 
-    if (room.pendingDraw && room.pendingDraw[player]) return;
+    if (room.pendingDraw && room.pendingDraw[player]) {
+      return;
+    }
 
     room.finalRoundActive = true;
     room.skatchCaller = player;
@@ -520,15 +600,18 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     const userData = socketToUser[socket.id];
-    if (!userData){
+    if (!userData) {
       return;
     }
 
     for (const [rid, members] of voiceMembers.entries()) {
       const next = members.filter((id) => id !== socket.id);
       
-      if (next.length === 0) voiceMembers.delete(rid);
-      else voiceMembers.set(rid, next);
+      if (next.length === 0) {
+        voiceMembers.delete(rid);
+      } else {
+        voiceMembers.set(rid, next);
+      }
     }
 
     const { roomId, playerName } = userData;

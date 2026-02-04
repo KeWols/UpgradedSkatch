@@ -5,7 +5,9 @@ const Chat = ({ chatLog, onSendMessage }) => {
   const [text, setText] = useState("");
 
   const handleSend = () => {
-    if (!text.trim()) return;
+    if (!text.trim()) {
+      return;
+    }
     onSendMessage(text);
     setText("");
   };

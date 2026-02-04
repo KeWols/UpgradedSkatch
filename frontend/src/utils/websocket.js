@@ -41,66 +41,88 @@ export function disconnectWebSocket() {
 }
 
 export function sendWebSocketMessage(roomId, playerName, message) {
-  if (!socket || !socket.connected) return;
+  if (!socket || !socket.connected) {
+    return;
+  }
   socket.emit("send_message", { roomId, playerName, message });
 }
 
 export function sendHoverOnCard(roomId, cardContainerID, color, playerName) {
   const s = getSocket();
-  if (!s || !s.connected) return;
+  if (!s || !s.connected) {
+    return;
+  }
   s.emit("hoverOnCard", { roomId, cardContainerID, color, playerName });
 }
 
 export function sendHoverOffCard(roomId, cardContainerID, playerName) {
   const s = getSocket();
-  if (!s || !s.connected) return;
+  if (!s || !s.connected) {
+    return;
+  }
   s.emit("hoverOffCard", { roomId, cardContainerID, playerName });
 }
 
 export function sendCardToReveal(roomId, cardContainerID) {
   const s = getSocket();
-  if (!s || !s.connected) return;
+  if (!s || !s.connected) {
+    return;
+  }
   s.emit("card_to_reveal", { roomId, cardContainerID });
 }
 
 export function sendHideRevealedCard(roomId, cardContainerID) {
   const s = getSocket();
-  if (!s || !s.connected) return;
+  if (!s || !s.connected) {
+    return;
+  }
   s.emit("card_to_hide", { roomId, cardContainerID });
 }
 
 export function sendNextTurn(roomId, nextPlayer) {
   const s = getSocket();
-  if (!s || !s.connected) return;
+  if (!s || !s.connected) {
+    return;
+  }
   s.emit("nextTurn", { roomId, nextPlayer });
 }
 
 /*export function sendDrawCard(roomId, nthCardInDeck, playerName) {
   const s = getSocket();
-  if (!s || !s.connected) return;
+  if (!s || !s.connected) {
+    return;
+  }
   s.emit("drawCard", { roomId, nthCardInDeck, playerName });
 }*/
 
 export function sendDrawCard(roomId, playerName) {
   const s = getSocket();
-  if (!s || !s.connected) return;
+  if (!s || !s.connected) {
+    return;
+  }
   s.emit("drawCard", { roomId, playerName });
 }
 
 export function sendDiscardDrawnCard(roomId) {
   const s = getSocket();
-  if (!s || !s.connected) return;
+  if (!s || !s.connected) {
+    return;
+  }
   s.emit("discardDrawnCard", { roomId });
 }
 
 export function sendSwapDrawnWithHand(roomId, handIndex) {
   const s = getSocket();
-  if (!s || !s.connected) return;
+  if (!s || !s.connected) {
+    return;
+  }
   s.emit("swapDrawnWithHand", { roomId, handIndex });
 }
 
 export function sendSkatch(roomId) {
   const s = getSocket();
-  if (!s || !s.connected) return;
+  if (!s || !s.connected) {
+    return;
+  }
   s.emit("skatch", { roomId });
 }

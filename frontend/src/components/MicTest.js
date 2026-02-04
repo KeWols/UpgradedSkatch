@@ -38,11 +38,13 @@ const MicTest = () => {
         };
       })
       .catch((err) => {
-        console.error("❌ Mikrofon hiba:", err);
+        console.error("Mikrofon hiba:", err);
       });
 
     return () => {
-      if (audioContext) audioContext.close();
+      if (audioContext) {
+        audioContext.close();
+      }
       if (audioRef.current?.srcObject) {
         audioRef.current.srcObject.getTracks().forEach((track) => track.stop());
       }
@@ -52,7 +54,7 @@ const MicTest = () => {
 
   return (
     <div style={{ padding: "20px", textAlign: "center", border: "1px solid gray" }}>
-      <h3>🎤 Mikrofon Teszt</h3>
+      <h3>Mikrofon Teszt</h3>
       <audio ref={audioRef} controls autoPlay />
       <p>Ha működik, akkor hallani fogod a saját hangodat.</p>
 

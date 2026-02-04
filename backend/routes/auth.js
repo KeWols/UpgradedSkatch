@@ -67,13 +67,13 @@ router.post("/login", async (req, res) => {
     // 6 jegyű szobakód generálása
     const roomId = Math.floor(100000 + Math.random() * 900000).toString();
 
-    // 📌 Visszaadjuk a `username`-et is a frontendnek!
+    // Visszaadjuk a username-et is a frontendnek
     return res.status(200).json({
       message: "Login successful",
-      sessionToken, 
+      sessionToken,
       roomId,
       id: userData.id,
-      username: userData.username  // 📌 Ezt eddig hiányzott!
+      username: userData.username
     });
   } catch (error) {
     return res.status(500).json({ error: error.message });

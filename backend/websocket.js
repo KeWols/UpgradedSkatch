@@ -21,14 +21,14 @@ function initializeWebSocket(server) {
       channel = await connection.createChannel();
       await channel.assertExchange("game_exchange", "topic", { durable: false });
 
-      console.log("✅ RabbitMQ kapcsolat létrejött (topic exchange)!");
+      console.log("RabbitMQ kapcsolat letrejott (topic exchange)!");
     } catch (error) {
-      console.error("🚨 RabbitMQ kapcsolódási hiba:", error);
+      console.error("RabbitMQ kapcsolodasi hiba:", error);
     }
   })();
 
   io.on("connection", (socket) => {
-    console.log(`✅ Új WebSocket kapcsolat jött létre: ${socket.id}`);
+    console.log(`Uj WebSocket kapcsolat jott letre: ${socket.id}`);
 
     socket.on("join_room", ({ roomId, playerName }) => {
       if (!rooms[roomId]) {
@@ -46,19 +46,23 @@ function initializeWebSocket(server) {
 
     socket.on("hoverOnCard", ({ roomId, cardContainerID, color }) => {
       const userData = socketToUser[socket.id];
-      if (!userData) return;
+      if (!userData) {
+        return;
+      }
       const playerName = userData.playerName;
 
-      console.log(`🟡 hoverOnCard: ${playerName} -> ${cardContainerID}, color=${color}`);
+      console.log(`hoverOnCard: ${playerName} -> ${cardContainerID}, color=${color}`);
       publishHoverOnCard(roomId, cardContainerID, color, playerName);
     });
 
     socket.on("hoverOffCard", ({ roomId, cardContainerID }) => {
       const userData = socketToUser[socket.id];
-      if (!userData) return;
+      if (!userData) {
+        return;
+      }
       const playerName = userData.playerName;
 
-      console.log(`🔵 hoverOffCard: ${playerName} -> ${cardContainerID}`);
+      console.log(`hoverOffCard: ${playerName} -> ${cardContainerID}`);
       publishHoverOffCard(roomId, cardContainerID, playerName);
     });
 

@@ -41,7 +41,7 @@ router.post("/", async (req, res) => {
       status: "waiting",
     };
 
-    console.log(`✅ [LOGIN] ${username} belépett, új roomId: ${roomId}`);
+    console.log(`[LOGIN] ${username} belepet, uj roomId: ${roomId}`);
 
     return res.status(200).json({
       message: "Sikeres bejelentkezés",

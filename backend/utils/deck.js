@@ -28,7 +28,9 @@ function shuffleDeck(deck) {
 }
 
 function getCardImage(card) {
-  if (!card) return null;
+  if (!card) {
+    return null;
+  }
   return `../assets/${card.name}_of_${card.suit}.png`;
 }
 
