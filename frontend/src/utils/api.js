@@ -1,5 +1,3 @@
-// RESTful API client – resource-based URLs and HTTP methods
-
 const API_BASE = "/api";
 
 // Rooms
@@ -25,7 +23,6 @@ export async function joinRoom(roomId, playerName) {
   return response.json();
 }
 
-// Users (registration)
 export async function registerUser(username, password) {
   const response = await fetch(`${API_BASE}/users`, {
     method: "POST",
@@ -35,7 +32,6 @@ export async function registerUser(username, password) {
   return response.json();
 }
 
-// Sessions (login)
 export async function createSession(username, password) {
   const response = await fetch(`${API_BASE}/sessions`, {
     method: "POST",

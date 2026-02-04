@@ -1,0 +1,147 @@
+/* frontend/src/Ingame.css */
+
+/* Az oldal alap elrendezése */
+.ingame-wrapper {
+  display: flex;
+  justify-content: center;
+  padding: 40px 20px;
+  min-height: 100vh;
+  background-color: #f0f2f5;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* A fő fehér doboz (Dashboard) */
+.dashboard-card {
+  background-color: white;
+  width: 100%;
+  max-width: 800px; /* Szélesebb, mint a login */
+  padding: 30px;
+  border-radius: 15px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Fejléc */
+.dashboard-header {
+  border-bottom: 2px solid #eee;
+  padding-bottom: 15px;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dashboard-header h2 {
+  margin: 0;
+  color: #333;
+}
+
+/* Info dobozok (Room ID, Player Name) */
+.info-panel {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* Két oszlop */
+  gap: 15px;
+  background-color: #f9f9f9;
+  padding: 15px;
+  border-radius: 10px;
+  border: 1px solid #e0e0e0;
+}
+
+.info-item strong {
+  color: #555;
+  display: block;
+  font-size: 0.9em;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.info-item span {
+  font-size: 1.2em;
+  font-weight: bold;
+  color: #007bff;
+}
+
+/* Játékos lista */
+.players-list {
+  background-color: #eef6ff;
+  padding: 15px;
+  border-radius: 8px;
+  color: #0056b3;
+}
+
+/* Input és Gomb csoportok (Join Room) */
+.action-group {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.game-input {
+  flex: 1;
+  padding: 10px 15px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 16px;
+}
+
+/* Gombok */
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 15px;
+}
+
+.btn:hover {
+  filter: brightness(0.95);
+  transform: translateY(-1px);
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn-primary { background-color: #007bff; color: white; }
+.btn-success { background-color: #28a745; color: white; }
+.btn-secondary { background-color: #6c757d; color: white; }
+.btn-warning { background-color: #ffc107; color: #333; }
+.btn-danger { background-color: #dc3545; color: white; }
+
+/* History szekció */
+.history-section {
+  border-top: 2px solid #eee;
+  padding-top: 20px;
+  margin-top: 10px;
+}
+
+.history-list {
+  margin-top: 15px;
+  max-height: 250px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #fafafa;
+  padding: 10px;
+}
+
+.history-item {
+  background-color: white;
+  border: 1px solid #eee;
+  padding: 10px;
+  margin-bottom: 8px;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* Chat és Voice wrapper */
+.communication-area {
+  margin-top: 20px;
+  border-top: 2px solid #eee;
+  padding-top: 20px;
+}

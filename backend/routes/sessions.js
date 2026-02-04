@@ -1,5 +1,3 @@
-// backend/routes/sessions.js
-
 const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcrypt");
@@ -11,7 +9,7 @@ function generateRoomCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-// POST /api/sessions – create session (login)
+//login
 router.post("/", async (req, res) => {
   try {
     const { username, password } = req.body;

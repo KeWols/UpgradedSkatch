@@ -15,7 +15,7 @@ async function connectBroker(){
     channel = await connection.createChannel();
 
     // topic exchange hogy szobankent routing key legyen
-    await channel.assertExchange("game_exchange", "topic", { durable: false });
+    await channel.assertExchange("game_exchange", "topic", { durable: false }); //durable: false, hogy ne mentse le a broker ujrainditasnal
 
     console.log("RabbitMQ kapcsolat letrejott (topic exchange)!");
     return channel;
@@ -25,7 +25,7 @@ async function connectBroker(){
   }
 }
 
-// RabbitMQ kapcsolat lezarasa (ha szukseges)
+// RabbitMQ kapcsolat lezarasa
 async function closeBroker() {
   try {
     if (channel) {

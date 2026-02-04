@@ -74,7 +74,7 @@ const VoiceChat = ({ socket, roomId, playerName, playerCount }) => {
       await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
     };
 
-    // initiator inditja az offert a masik answerel
+    //inditja az offert a masik answearrel
     const onWebrtcReady = async ({ initiatorId }) => {
       const pc = pcRef.current;
 

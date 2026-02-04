@@ -1,0 +1,110 @@
+/* frontend/src/Auth.css */
+
+/* Az egész oldal háttere és igazítása */
+.auth-wrapper {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #f0f2f5; /* Világos szürke háttér */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* A középső "kártya" doboz */
+.auth-card {
+  background-color: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  width: 100%;
+  max-width: 400px; /* Ne legyen túl széles */
+  text-align: center;
+}
+
+/* Címsorok */
+.auth-card h1, .auth-card h2 {
+  margin-bottom: 1.5rem;
+  color: #333;
+  font-weight: 600;
+}
+
+/* Űrlap elemek */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px; /* Távolság az inputok között */
+}
+
+/* Input mezők */
+.auth-input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 16px;
+  box-sizing: border-box; /* Hogy a padding ne növelje a szélességet */
+  transition: border-color 0.3s;
+}
+
+.auth-input:focus {
+  border-color: #007bff;
+  outline: none;
+}
+
+/* Gombok alapstílusa */
+.auth-button {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+  margin-top: 10px;
+}
+
+.auth-button:active {
+  transform: scale(0.98);
+}
+
+/* Elsődleges gomb (Login, Register) - Kék */
+.btn-primary {
+  background-color: #007bff;
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #0056b3;
+}
+
+/* Másodlagos gomb (Elfelejtett jelszó) - Narancs/Sárga */
+.btn-secondary {
+  background-color: #ffc107;
+  color: #333;
+}
+
+.btn-secondary:hover {
+  background-color: #e0a800;
+}
+
+/* Linkek stílusa (Landing page) */
+.auth-link {
+  display: inline-block;
+  margin: 0 10px;
+  text-decoration: none;
+  color: #007bff;
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.auth-link:hover {
+  text-decoration: underline;
+}
+
+/* Szöveg, elválasztó */
+.auth-text {
+  color: #666;
+  margin-top: 1rem;
+}
