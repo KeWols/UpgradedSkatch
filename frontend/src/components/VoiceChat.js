@@ -14,6 +14,7 @@ const VoiceChat = ({ socket, roomId, playerName, playerCount }) => {
     if (!socket || !socket.connected || !roomId || !playerName) {
       return;
     }
+    // webrtc csak ket jatekosra mukodik
     if (playerCount !== 2) {
       return;
     }
@@ -73,18 +74,18 @@ const VoiceChat = ({ socket, roomId, playerName, playerCount }) => {
       await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
     };
 
+    // initiator inditja az offert a masik answerel
     const onWebrtcReady = async ({ initiatorId }) => {
-      
       const pc = pcRef.current;
 
-      if (!pc){
+      if (!pc) {
         return;
       }
 
       if (socket.id !== initiatorId) {
         return;
       }
-      
+
       if (pc.signalingState !== "stable") {
         return;
       }
@@ -145,6 +146,7 @@ const VoiceChat = ({ socket, roomId, playerName, playerCount }) => {
       socket.on("answer", onAnswer);
       socket.on("webrtc_ready", onWebrtcReady);
 
+      // voice signalok csak relay a szerveren at
       socket.emit("join_voice_chat", { roomId, playerName });
     };
 

@@ -11,7 +11,7 @@ const MicTest = () => {
     let microphone;
     let javascriptNode;
 
-    // Mikrofon engedélykérés
+    // Mikrofon engedelyezese es stream kezelese
     navigator.mediaDevices.getUserMedia({ audio: true })
       .then((stream) => {
         if (audioRef.current) {
@@ -34,7 +34,7 @@ const MicTest = () => {
           const array = new Uint8Array(analyser.frequencyBinCount);
           analyser.getByteFrequencyData(array);
           const average = array.reduce((a, b) => a + b, 0) / array.length;
-          setVolume(average); // Frissíti a hangerő mért értékét
+          setVolume(average); 
         };
       })
       .catch((err) => {

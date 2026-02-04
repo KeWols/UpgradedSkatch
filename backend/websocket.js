@@ -66,8 +66,6 @@ function initializeWebSocket(server) {
       publishHoverOffCard(roomId, cardContainerID, playerName);
     });
 
-    // … ide jön a többi esemény (send_message, drawCard, endTurn, stb.)
-    // … hasonlóan, mint az index.js-ben
   });
 
   return io;

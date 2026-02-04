@@ -1,4 +1,4 @@
-// backend/routes/sessions.js – RESTful session (login) resource
+// backend/routes/sessions.js
 
 const express = require("express");
 const router = express.Router();

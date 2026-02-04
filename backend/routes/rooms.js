@@ -1,4 +1,4 @@
-// backend/routes/rooms.js – RESTful room resources
+// backend/routes/rooms.js
 
 const express = require("express");
 const router = express.Router();
@@ -8,7 +8,7 @@ function generateRoomCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-// POST /api/rooms – create a new room
+// uj szoba letrehozasa
 router.post("/", (req, res) => {
   const roomId = generateRoomCode();
   rooms[roomId] = { players: [], status: "waiting" };
@@ -16,7 +16,7 @@ router.post("/", (req, res) => {
   return res.status(201).json({ roomId });
 });
 
-// GET /api/rooms/:roomId – get room state
+// szoba allapot lekerese
 router.get("/:roomId", (req, res) => {
   const { roomId } = req.params;
   if (!rooms[roomId]) {
@@ -29,7 +29,7 @@ router.get("/:roomId", (req, res) => {
   });
 });
 
-// POST /api/rooms/:roomId/players – add a player to the room (join)
+// jatekos roomba csatlakozas
 router.post("/:roomId/players", (req, res) => {
   const { roomId } = req.params;
   const { playerName } = req.body;
@@ -52,10 +52,10 @@ router.post("/:roomId/players", (req, res) => {
   });
 });
 
+// szoba torlese
 router.delete("/:roomId", (req, res) => {
   const { roomId } = req.params;
 
-  // Törlés a memóriából (roomsData.js-ből jön a rooms referencia)
   if (rooms[roomId]) {
     delete rooms[roomId];
     console.log(`Szoba torolve: ${roomId}`);

@@ -264,11 +264,12 @@ function advanceTurn(io, roomId, room) {
 }
 
 
-//-------------------------------------------------------------------------
+// --- WebSocket ---
 
 io.on("connection", (socket) => {
   console.log("WebSocket connected:", socket.id);
 
+  // jatekos szobaba lep es broker topicokra feliratkozunk
   socket.on("join_room", ({ roomId, playerName }) => {
     if (!rooms[roomId]) {
       return;
@@ -286,6 +287,7 @@ io.on("connection", (socket) => {
       players: rooms[roomId].players,
     });
 
+    // broker topicra erkezo eventeket tovabbkuldjuk a szobanak
     subscribeToRoomEvent(roomId, "hoverOnCard", (data) => {
       io.to(roomId).emit("hoverOnCardUpdate", data);
     });
@@ -315,8 +317,8 @@ io.on("connection", (socket) => {
     io.to(roomId).emit("receiveMessage", { playerName, message });
   });
 
+  // voice chat ha ketten vannak a szobaban webrtc ready signal
   socket.on("join_voice_chat", ({ roomId, playerName }) => {
-    
     socket.join(roomId);
 
     const members = voiceMembers.get(roomId) || [];
@@ -367,6 +369,7 @@ io.on("connection", (socket) => {
     }
   });
 
+  // huzas csak a huzonak kuldi a lapot tobbiek brokerrol kapjak
   socket.on("drawCard", ({ roomId, playerName }) => {
     const room = rooms[roomId];
     if (!room || !Array.isArray(room.deck) || room.deck.length === 0) {

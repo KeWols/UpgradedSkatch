@@ -1,4 +1,4 @@
-// backend/routes/users.js – RESTful user resource
+// backend/routes/users.js
 
 const express = require("express");
 const router = express.Router();
@@ -6,6 +6,7 @@ const bcrypt = require("bcrypt");
 const { v4: uuidv4 } = require("uuid");
 const db = require("../firebase");
 
+// regisztracio
 router.post("/", async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -37,6 +38,7 @@ router.post("/", async (req, res) => {
   }
 });
 
+// jelszo modositasa
 router.patch("/:username", async (req, res) => {
   try {
     const { username } = req.params;
@@ -63,6 +65,7 @@ router.patch("/:username", async (req, res) => {
   }
 });
 
+// fiok torlese
 router.delete("/:username", async (req, res) => {
   try {
     const { username } = req.params;

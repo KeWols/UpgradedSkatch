@@ -3,13 +3,12 @@ const express = require("express");
 const router = express.Router();
 const db = require("../firebase");
 
-// GET /api/history/:username - Lekéri egy játékos előző meccseit
+// jatekos meccsei winner alapjan
 router.get("/:username", async (req, res) => {
   try {
     const { username } = req.params;
     const historyRef = db.ref("matchHistory");
-    
-    // Firebase lekérdezés (egyszerűsítve: kliens oldalon szűrünk vagy itt)
+
     const snapshot = await historyRef.orderByChild("winner").equalTo(username).once("value");
     
     if (!snapshot.exists()) {
@@ -27,10 +26,8 @@ router.get("/:username", async (req, res) => {
   }
 });
 
-// POST /api/history - Ezt hívod meg a szerverről (belső hívás) vagy kliensről a meccs végén
+// meccs mentese
 router.post("/", async (req, res) => {
-    // Ezt akár az index.js endGame függvényében is hívhatod közvetlenül DB mentéssel, 
-    // de REST végpontként így nézne ki:
     const { roomId, winner, players, timestamp } = req.body;
     const newRef = db.ref("matchHistory").push();
     await newRef.set({ roomId, winner, players, timestamp });

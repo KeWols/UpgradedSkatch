@@ -14,7 +14,7 @@ async function connectBroker(){
     connection = await amqp.connect("amqp://localhost");
     channel = await connection.createChannel();
 
-    // A 'fanout' helyett most 'topic'-et használunk
+    // topic exchange hogy szobankent routing key legyen
     await channel.assertExchange("game_exchange", "topic", { durable: false });
 
     console.log("RabbitMQ kapcsolat letrejott (topic exchange)!");
@@ -40,6 +40,7 @@ async function closeBroker() {
   }
 }
 
+// feliratkozas egy roomId.eventKey topicra aki publishol az kapja
 async function subscribeToRoomEvent(roomId, eventKey, callback) {
   const ch = await connectBroker();
   const routingKey = `${roomId}.${eventKey}`;
@@ -73,7 +74,7 @@ async function publishToRoomEvent(roomId, eventKey, payload) {
   console.log(`Published to ${routingKey}:`, payload);
 }
 
-// ==== Hover események spec. segédfüggvények ====
+// hover esemenyek kartyara mutatas levetel
 
 async function subscribeHoverOnCard(roomId, callback) {
   return subscribeToRoomEvent(roomId, "hoverOnCard", callback);
@@ -84,11 +85,10 @@ async function subscribeHoverOffCard(roomId, callback) {
 }
 
 async function publishHoverOnCard(roomId, cardContainerID, color, playerName) {
-  // return publishToRoomEvent(roomId, "hoverOnCard", payload);
   const message = JSON.stringify({
     cardContainerID,
     color,
-    playerName,  // **Fontos, hogy továbbítsuk!**
+    playerName,
     timestamp: Date.now(),
   });
 
@@ -109,9 +109,8 @@ async function publishHoverOffCard(roomId, cardContainerID, playerName) {
   console.log(`Published to ${roomId}.hoverOffCard: ${message}`);
 }
 
-// =============== Új reveal/hide események ===============
+// kartyafedes mutatasa elrejtese masik jatekosoknak
 async function publishCardToReveal(roomId, cardContainerID, playerName) {
-  // Minden "másik" játékos ezt kapja: -> opponentRevealed.png
   const payload = {
     cardContainerID,
     playerName,

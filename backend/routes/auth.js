@@ -55,7 +55,7 @@ router.post("/login", async (req, res) => {
 
     const userData = snapshot.val(); // { id, username, hashedPassword }
 
-    // Jelszó ellenőrzés
+    // Jelszo
     const match = await bcrypt.compare(password, userData.hashedPassword);
     if (!match) {
       return res.status(401).json({ error: "Invalid username or password" });
@@ -64,7 +64,7 @@ router.post("/login", async (req, res) => {
     // Ideiglenes session token
     const sessionToken = uuidv4();
 
-    // 6 jegyű szobakód generálása
+    // szobakod generalasa
     const roomId = Math.floor(100000 + Math.random() * 900000).toString();
 
     // Visszaadjuk a username-et is a frontendnek

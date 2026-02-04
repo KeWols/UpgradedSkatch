@@ -269,7 +269,7 @@ const IngamePage = () => {
       {/* 3. ÚJ GOMB ÉS LISTA MEGJELENÍTÉSE */}
       <div style={{ margin: "20px 0", borderTop: "1px solid #ccc", paddingTop: "10px" }}>
         <button onClick={handleShowHistory}>
-            {showHistory ? "Előzmények elrejtése" : "Korábbi meccseim (Rich Client)"}
+            {showHistory ? "Előzmények elrejtése" : "Korábbi meccseim"}
         </button>
 
         {showHistory && (

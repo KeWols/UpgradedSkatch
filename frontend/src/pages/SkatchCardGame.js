@@ -208,7 +208,7 @@ function SkatchCardGame() {
 
     return () => {
       if (s) {
-        s.off("hoverOnCardUpdate"); // <---------------------- mi ezek a cleanupok? es miert s.off?
+        s.off("hoverOnCardUpdate");
         s.off("hoverOffCardUpdate");
         s.off("cardToRevealUpdate");
         s.off("cardToHideUpdate");
@@ -222,6 +222,7 @@ function SkatchCardGame() {
         s.off("gameEnded");
       }
     };
+    
   }, [roomId, players, playerName, currentTurn]);
 
   const handleMouseEnter = (cardContainerID) => {
